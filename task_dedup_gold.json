@@ -1,0 +1,164 @@
+[
+    {"cluster_id":"TEL","task":"Summarizes liver involvement in telomere biology disorders"},
+    {"cluster_id":"SASP","task":"Investigate SASP regulatory mechanisms in bone tissue cells"},
+    {"cluster_id":"GRAV","task":"Exploring microgravity as a therapeutic approach to combat aging"},
+  
+    {"cluster_id":"SEN","task":"Investigating cellular senescence mechanisms and therapeutic targets"},
+    {"cluster_id":"SEN","task":"Examines molecular mechanisms and therapeutic agents for targeting senescent cells"},
+    {"cluster_id":"SEN","task":"Understanding cellular senescence for therapeutic development"},
+  
+    {"cluster_id":"TEL","task":"Investigates telomere shortening in ILD diagnosis and treatment"},
+    {"cluster_id":"ANGPTL4","task":"Investigating ANGPTL4's role in ageing and age-related diseases"},
+  
+    {"cluster_id":"MECH","task":"Investigating molecular mechanisms of age-related diseases"},
+    {"cluster_id":"MECH","task":"Exploring molecular mechanisms and therapeutic interventions for aging-related diseases"},
+  
+    {"cluster_id":"THEORY","task":"Exploring fundamental nature of ageing process"},
+    {"cluster_id":"CLINIC","task":"Identifies challenges in translating longevity research to clinical practice"},
+    {"cluster_id":"GADD45","task":"Investigating GADD45α's role in aging biology"},
+  
+    {"cluster_id":"GRAV","task":"Identify cellular mechanisms of ageing in altered gravity"},
+  
+    {"cluster_id":"NMN","task":"Reviews NMN's anti-aging potential"},
+    {"cluster_id":"EPI","task":"Reviews epigenetic pathways in anti-aging drugs"},
+  
+    {"cluster_id":"PROT","task":"Investigates protein aggregation in age-related neurodegeneration"},
+  
+    {"cluster_id":"LIFESTYLE","task":"Investigating exercise as a pleiotropic intervention for ageing and neurodegeneration"},
+  
+    {"cluster_id":"EV","task":"Investigating NDEVs as biomarkers for AD"},
+    {"cluster_id":"SEN","task":"Investigating quercetin's senotherapeutic effects"},
+  
+    {"cluster_id":"RNA","task":"Reviewing RNA therapeutics for healthy aging"},
+    {"cluster_id":"CARD","task":"Reviewing age-related SAN dysfunction"},
+    {"cluster_id":"CARD","task":"Investigating age- and sex-related changes in cardiac collagen metabolism"},
+  
+    {"cluster_id":"EPI","task":"Reviewing heterochromatin's role in ageing"},
+  
+    {"cluster_id":"RAD","task":"Investigates radiation-induced cellular senescence and epigenetic changes"},
+  
+    {"cluster_id":"MUSCLE","task":"Reviewing recent advancements in sarcopenia research"},
+  
+    {"cluster_id":"EV","task":"Exploring EVs' role in age-related diseases"},
+  
+    {"cluster_id":"IMMUNO","task":"Reviewing MSC-based therapies for immunosenescence"},
+    {"cluster_id":"IMMUNO","task":"Reviewing molecular mechanisms of cellular senescence and immunosenescence"},
+  
+    {"cluster_id":"KLOTHO","task":"Investigating Klotho's role in aging and cancer"},
+  
+    {"cluster_id":"LIFESPAN","task":"Reviewing evaluation methodologies for lifespan extension interventions"},
+  
+    {"cluster_id":"SEN","task":"Exploring T cell-based approaches for senescent cell clearance"},
+  
+    {"cluster_id":"NANOVES","task":"Investigating plant-derived nanovesicles for antiaging"},
+  
+    {"cluster_id":"COVID","task":"Investigating mitochondrial dysfunction in COVID-19"},
+  
+    {"cluster_id":"METAB_AGE","task":"Predicting short-term mortality using metabolomic aging score"},
+  
+    {"cluster_id":"IMMUNO","task":"Reviews molecular mechanisms of T-cell senescence"},
+    {"cluster_id":"IMMUNO","task":"Explore therapeutic strategies for immunosenescence in sepsis"},
+  
+    {"cluster_id":"SEN","task":"Discussing challenges in senolytic drug development"},
+  
+    {"cluster_id":"CARD","task":"Exploring key mechanisms of cardiac aging"},
+  
+    {"cluster_id":"EV","task":"Investigating extracellular vesicles as therapeutic agents for ageing"},
+  
+    {"cluster_id":"THERAPY","task":"Exploring replacement therapies as interventions for aging"},
+  
+    {"cluster_id":"FRAME","task":"Analyzing SENS and HoA frameworks"},
+  
+    {"cluster_id":"TEL","task":"Examines telomere-based biomarkers and metabolic interventions for personalized longevity medicine"},
+  
+    {"cluster_id":"SEN_ND","task":"Reviews cell senescence in Alzheimer's disease pathogenesis"},
+  
+    {"cluster_id":"REGEN","task":"Exploring iPSC-based regenerative therapies for aging-related conditions"},
+  
+    {"cluster_id":"SASP","task":"Examines SASP's molecular regulation and therapeutic potential"},
+  
+    {"cluster_id":"APT","task":"Reviews aptamers for age-related disease diagnosis and treatment"},
+  
+    {"cluster_id":"TEL","task":"Investigating telomere length in individuals with intellectual disability"},
+  
+    {"cluster_id":"IMM_CAN","task":"Exploring interactions between immune system and cancer in aging"},
+  
+    {"cluster_id":"cGAS","task":"Investigating cGAS-STING pathway in age-related neurodegenerative diseases"},
+  
+    {"cluster_id":"TARGET","task":"Identifying pro-ageing targets for anti-ageing therapies"},
+  
+    {"cluster_id":"CARD_EPI","task":"Understanding epigenetic mechanisms in cardiac aging"},
+  
+    {"cluster_id":"RAD","task":"Investigates radiation-induced metabolic alterations"},
+  
+    {"cluster_id":"MUSCLE","task":"Exploring interplay between CKD and sarcopenia"},
+  
+    {"cluster_id":"BRAIN","task":"Understanding brain aging mechanisms"},
+  
+    {"cluster_id":"PRIOR","task":"Identify research priorities for understanding human ageing"},
+  
+    {"cluster_id":"CHIP","task":"Exploring CHIP's role in cerebrovascular aging"},
+  
+    {"cluster_id":"EPI","task":"Reviewing chromatin modifications and their impact on aging"},
+  
+    {"cluster_id":"FERRO","task":"Analyzing ferroptosis in aging mechanisms"},
+  
+    {"cluster_id":"SEN_CAN","task":"Analyzing cellular senescence in cancer"},
+  
+    {"cluster_id":"CURC","task":"Investigating curcumin's therapeutic potential in neurodegeneration"},
+  
+    {"cluster_id":"DIGEST","task":"Investigating digestion in the elderly using in vitro models"},
+  
+    {"cluster_id":"RETRO","task":"Investigating retrotransposons in neuroaging and neurological diseases"},
+  
+    {"cluster_id":"PART_REPRO","task":"Investigating partial cellular reprogramming effects on ageing"},
+  
+    {"cluster_id":"POLYPH","task":"Investigate polyphenols' role in healthy ageing"},
+  
+    {"cluster_id":"SEN_CAN","task":"Reviewing senescence status impact on cancer prognosis"},
+  
+    {"cluster_id":"THEORY","task":"Discussing current knowledge and future directions in aging research"},
+  
+    {"cluster_id":"IMMUNO","task":"Improving vaccine immunogenicity in older adults"},
+  
+    {"cluster_id":"CARD_EPI","task":"Investigating circRNAs in vascular aging"},
+  
+    {"cluster_id":"MECH","task":"Investigate abrupt molecular shifts in aging"},
+  
+    {"cluster_id":"TCM","task":"Reviews anti-aging pathways of TCM polysaccharides"},
+  
+    {"cluster_id":"EV","task":"Investigating exosomes in cancer therapy"},
+  
+    {"cluster_id":"BRAIN_TUMOR","task":"Investigating molecular mechanisms of aging in brain tumor progression"},
+  
+    {"cluster_id":"IMM_CAN","task":"Reviewing immunosenescence impact on cancer"},
+  
+    {"cluster_id":"METFORMIN","task":"Investigating metformin's anti-aging properties"},
+  
+    {"cluster_id":"OVARY","task":"Identify hallmarks of ovarian aging"},
+  
+    {"cluster_id":"CARD_EPI","task":"Investigating histone methylation's role in vascular aging"},
+  
+    {"cluster_id":"SEN_PD","task":"Investigating cellular senescence in Parkinson's disease"},
+  
+    {"cluster_id":"SWITCH","task":"Identify molecular switches to delay ageing"},
+  
+    {"cluster_id":"LN_STROMA","task":"Review of lymph node stromal cell ageing"},
+  
+    {"cluster_id":"METAB_AGE","task":"Investigating metabolic alterations with age"},
+  
+    {"cluster_id":"LIFESTYLE","task":"Examines interplay of nutrition and exercise in aging"},
+  
+    {"cluster_id":"SEN_METHOD","task":"Developing standardized methods for senescence detection"},
+  
+    {"cluster_id":"KIDNEY","task":"Investigating REC dysfunction in kidney aging"},
+  
+    {"cluster_id":"MAM","task":"Investigating MAMs in ageing"},
+  
+    {"cluster_id":"RETINA","task":"Investigating ageing retinal diseases using fish models"},
+  
+    {"cluster_id":"IMM_CAN","task":"Investigating natural compounds for immunotherapy in gastric cancer"},
+  
+    {"cluster_id":"SEN_CAN","task":"Exploring senotherapy approaches for cancer treatment"}
+]
+  
