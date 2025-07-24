@@ -17,9 +17,9 @@
   </div>
 </div>
 
-## Развертывание сервиса
+# Развертывание сервиса
 
-### Переменные окружения
+## Переменные окружения
 ```bash
 # LLM API настройки
 LLM_API_BASE_URL=http://localhost:8000/v1
@@ -48,42 +48,24 @@ docker compose up -d
 
 *Приложение микросервисное на основе Docker, запуск в одну команду.*
 
-Открыть в браузере `http://localhost/`
+Открыть в браузере `http://localhost`
 
-## Архитектура
+# Архитектура
 
 <img src="assets/service_structure.jpg" style="width: 50%">
 
-### Докер контейнеры
+## Докер контейнеры
 
 На сервисе развернуты следующие компоненты:
 
-<div style="display: flex; gap: 32px; margin-bottom: 24px;">
-  <div style="flex: 1; background: #f5f7fa; border-radius: 18px; padding: 24px; min-width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-    <p style="margin: 0; text-align: center; color: #000000;">
-        <b>Frontend (Streamlit)</b>
-        <p style="color: #000;">Веб-интерфейс для визуализации и анализа данных. Порт 80.</p>
-    </p>
-  </div>
-  <div style="flex: 1; background: #f5f7fa; border-radius: 18px; padding: 24px; min-width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-    <p style="margin: 0; text-align: center; color: #000000;">
-        <b>Backend (FastAPI)</b>
-        <p style="color: #000;">API сервис с NER и embedding моделями. Порт 3000.</p>
-    </p>
-  </div>
-  <div style="flex: 1; background: #f5f7fa; border-radius: 18px; padding: 24px; min-width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-    <p style="margin: 0; text-align: center; color: #000000;">
-        <b>Qdrant (Vector DB)</b>
-        <p style="color: #000;">Векторная база данных для хранения эмбеддингов. Порт 6333.</p>
-    </p>
-  </div>
-  <div style="flex: 1; background: #f5f7fa; border-radius: 18px; padding: 24px; min-width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-    <p style="margin: 0; text-align: center; color: #000000;">
-        <b>Neo4j (Graph DB)</b>
-        <p style="color: #000;">Графовая база данных для хранения связей. Порт 7474/7687.</p>
-    </p>
-  </div>
-</div>
+| Название                | Предназначение                                              | Порт        |
+|-------------------------|------------------------------------------------------------|-------------|
+| Frontend (Streamlit)    | Веб-интерфейс для визуализации и анализа данных            | 80          |
+| Backend (FastAPI)       | API сервис с NER и embedding моделями                      | 3000        |
+| Qdrant (Vector DB)      | Векторная база данных для хранения эмбеддингов             | 6333        |
+| Neo4j (Graph DB)        | Графовая база данных для хранения связей                   | 7474/7687   |
+| Agent                   | Контейнер для агентов: парсинг, построение графа, генерация отчётов и др. задачи | 3001        |
+
 
 **ML компоненты в Backend:**
 - **2 spaCy модели для NER**: `en_ner_bc5cdr_md` и `en_ner_bionlp13cg_md` для извлечения именованных сущностей
@@ -92,9 +74,11 @@ docker compose up -d
 
 ---
 
-### Принцип работы
+# Принцип работы
 
 <img src="assets/work_schema.jpg" style="width: 70%">
+
+<img src="assets/priority_calc.jpg" style="width: 30%">
 
 **Принцип работы сервиса:**
 
@@ -111,7 +95,7 @@ docker compose up -d
 
 ---
 
-### Структура файлов
+# Структура файлов
 
 #### Микросервисная архитектура
 ```
@@ -134,15 +118,9 @@ longevity-predictor/
 └── .env                         # переменные окружения (создать из .env.example)
 ```
 
-#### Устаревшие компоненты (из старой версии)
-- **`graph_making.py`** - обработка статей и построение графа знаний
-- **`llm_task_clustering.py`** - кластеризация задач с LLM
-- **`reporting_agent.py`** - генерация отчетов
-- **`scorer_v2/`** - система оценки приоритетности
-
 ---
 
-## Команда
+# Команда
 
 **Команда AGI Team:**
 
