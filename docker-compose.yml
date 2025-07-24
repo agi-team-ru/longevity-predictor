@@ -60,6 +60,7 @@ services:
       - "LOG_LEVEL=INFO"
     logging: *logging
     volumes:
+      - ./data:/app/data
       - ./models:/app/models
       - ./agent/src:/app/src
     ports:
