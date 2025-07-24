@@ -17,7 +17,7 @@ async def lifespan(app: FastAPI):
     }
 
 
-app = FastAPI(lifespan=lifespan, root_path=os.environ["API_BASE_URI"])
+app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/")

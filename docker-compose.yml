@@ -13,12 +13,10 @@ services:
     restart: always
     logging: *logging
     environment:
-      - "API_BASE_URI=$API_BASE_URI"
-      - "STREAMLIT_SERVER_BASE_URL_PATH=$UI_BASE_URI"
       - "LISTEN_PORT=$LISTEN_PORT"
       - "LOG_LEVEL=INFO"
     ports:
-      - "8501:8501" # direct access
+      - "80:8501" # direct access
       - "15678:5678" # debugger
     volumes:
       - ./frontend/src:/app/src
@@ -29,7 +27,6 @@ services:
       network: host
     restart: always
     environment:
-      - "API_BASE_URI=$API_BASE_URI"
       - "OPENAI_BASE_URL=$LLM_API_BASE_URL"
       - "OPENAI_API_BASE=$LLM_API_BASE_URL"
       - "OPENAI_API_KEY=$LLM_API_KEY"
@@ -41,6 +38,7 @@ services:
       - ./models:/app/models
       - ./backend/src:/app/src
     ports:
+      - "3000:3000" 
       - "5678:5678" # debugger
     extra_hosts:
       - "host.docker.internal:host-gateway"
