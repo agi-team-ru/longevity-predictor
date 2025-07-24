@@ -11,6 +11,9 @@ from collections import Counter
 from tqdm import tqdm
 from openai import OpenAI
 from scorer_v2 import TopicScorer
+from dotenv import load_dotenv
+
+load_dotenv()
 
 LLM_LOG_PATH = "llm_log.jsonl"
 LLM_CACHE_PATH = "llm_cache.json"
@@ -276,8 +279,8 @@ def update_graph(graph:nx.Graph, task:str, found_task:str, article:dict, tags:di
         graph.add_edge(task, ent)
 
 client = OpenAI(
-    base_url="http://localhost:8000/v1",
-    api_key="dummy-key"
+    base_url=os.getenv("OPENAI_API_BASE"),
+    api_key=os.getenv("OPENAI_API_KEY")
 )
 
 # embedder = HuggingFaceEmbeddings(
