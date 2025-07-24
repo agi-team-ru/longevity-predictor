@@ -60,17 +60,22 @@ ABSTRACT:
     return data
 
 # --- NER API ---
-def get_tags_via_api(abstract: str, url="http://localhost:8001/ner"):
+def get_tags_via_api(abstract: str, url="http://localhost:3000/ner"):
     resp = requests.post(url, json={"text": abstract})
     resp.raise_for_status()
     entities = resp.json()["entities"]
     tags = {}
     for ent in entities:
-        canon = ent["canonical"]
+        canon = ent.get("canonical") or ent.get("text")
         label = ent["label"]
         if canon and canon not in tags:
             tags[canon] = label
     return tags
+
+def get_embedding_via_api(text, url="http://localhost:3000/embed"):
+    resp = requests.post(url, json={"text": text})
+    resp.raise_for_status()
+    return resp.json()["embedding"]
 
 # --- Neo4j ---
 class Neo4jGraph:
@@ -79,31 +84,32 @@ class Neo4jGraph:
     def close(self):
         self.driver.close()
 
-    def add_task_with_article_and_tags(self, task_data, article, tags):
+    def add_task_with_article_and_tags(self, task_data, article, tags, embedding):
         with self.driver.session() as session:
-            session.write_transaction(self._add_task_tx, task_data, article, tags)
+            session.write_transaction(self._add_task_tx, task_data, article, tags, embedding)
 
     @staticmethod
-    def _add_task_tx(tx, task_data, article, tags):
-        # Добавляем задачу
+    def _add_task_tx(tx, task_data, article, tags, embedding):
+        # Добавляем задачу (embedding как строка JSON)
         tx.run(
             """
-            MERGE (t:Task {text: $task, category: $category, maturity: $maturity})
-            SET t.explanation = $explanation
+            MERGE (t:Task {text: $task})
+            SET t.explanation = $explanation, t.embedding = $embedding
             """,
             task=task_data['task'],
-            category=task_data.get('category', 'unknown'),
-            maturity=task_data.get('maturity', 'unknown'),
-            explanation=task_data.get('explanation', '')
+            explanation=task_data.get('explanation', ''),
+            embedding=json.dumps(embedding)
         )
-        # Добавляем статью
+        # Добавляем статью (category, maturity)
         tx.run(
             """
             MERGE (a:Article {title: $title})
-            SET a += $props
+            SET a += $props, a.category = $category, a.maturity = $maturity
             """,
             title=article['title'],
-            props={k: v for k, v in article.items() if k != 'title'}
+            props={k: v for k, v in article.items() if k != 'title'},
+            category=task_data.get('category', 'unknown'),
+            maturity=task_data.get('maturity', 'unknown')
         )
         # Связь задача-статья
         tx.run(
@@ -114,7 +120,7 @@ class Neo4jGraph:
             task=task_data['task'],
             title=article['title']
         )
-        # Добавляем теги и связи
+        # Добавляем теги и связи для задачи
         for ent, label in tags.items():
             tx.run(
                 """
@@ -125,6 +131,18 @@ class Neo4jGraph:
                 MERGE (t)-[:HAS_TAG]->(e)
                 """,
                 ent=ent, label=label, task=task_data['task']
+            )
+        # Добавляем теги и связи для статьи
+        for ent, label in tags.items():
+            tx.run(
+                """
+                MERGE (e:Tag {name: $ent})
+                SET e.label = $label
+                WITH e
+                MATCH (a:Article {title: $title})
+                MERGE (a)-[:HAS_TAG]->(e)
+                """,
+                ent=ent, label=label, title=article['title']
             )
 
 # --- Основной процесс ---
@@ -154,7 +172,8 @@ def process_articles(json_path):
             print(f"[ERROR] NER API failed: {e}")
             tags = {}
         try:
-            graph.add_task_with_article_and_tags(task_data, art, tags)
+            embedding = get_embedding_via_api(task_data['task'])
+            graph.add_task_with_article_and_tags(task_data, art, tags, embedding)
             print("[INFO] Written to Neo4j.")
         except Exception as e:
             print(f"[ERROR] Neo4j write failed: {e}")
@@ -162,4 +181,4 @@ def process_articles(json_path):
     print("[INFO] Processing complete.")
 
 if __name__ == "__main__":
-    process_articles("parsed_articles/pubmed_articles.json") 
+    process_articles("research\parsed_articles\pubmed_articles.json") 
