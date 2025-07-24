@@ -13,6 +13,8 @@ from src.parsers.parcer_pudmed import PubMedParser
 from src.parsers.parcer_biorxiv import fast_multiword_biorxiv_search
 # from src.parsers.parser_X import scrape_x_hashtag
 
+from src.scorer.score_name_clusters import name_and_score_clusters
+
 logging.basicConfig(level=os.environ.get("LOG_LEVEL", "WARNING").upper())
 
 logger = logging.getLogger(__name__)
@@ -87,6 +89,11 @@ def cluster_tasks():
 @app.post("/score_graph")
 def score_graph():
     update_confidence_scores_in_neo4j()
+    return {"status": "ok"}
+
+@app.post("/score_graph_name_clusters")
+def score_name_clusters():
+    name_and_score_clusters()
     return {"status": "ok"}
 
 @app.post("/generate_report")
