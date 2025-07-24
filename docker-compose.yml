@@ -66,6 +66,19 @@ services:
     volumes:
       - "neo4j-data:/data:z"
 
+  streamlit:
+    build:
+      context: ./research
+      network: host
+    restart: always
+    logging: *logging
+    environment:
+      - "LOG_LEVEL=INFO"
+    ports:
+      - "8502:8501" # streamlit research dashboard
+    volumes:
+      - ./research:/app/research:ro
+
 volumes:
   qdrant-data:
   neo4j-data:
