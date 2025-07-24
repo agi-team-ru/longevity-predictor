@@ -12,6 +12,7 @@ import json
 import openai
 
 import os
+from neo4j import GraphDatabase
 
 LLM_MODEL = os.getenv("LLM_MODEL")
 
@@ -301,150 +302,72 @@ class TopicScorer:
         return final_confidence
 
 
-JOURNAL_WEIGHT = {
-    "Nature":                        1.00,
-    "Science":                       1.00,
-    "Cell":                          1.00,
-    "Nature Medicine":               0.95,
-    "Nature Biotechnology":          0.94,
-    "Nature Metabolism":             0.92,
-    "Nature Aging":                  0.90,
-    "Science Translational Medicine":0.90,
-    "Cell Metabolism":               0.88,
-    "Cell Stem Cell":                0.88,
-    "Aging Cell":                    0.80,
-    "Aging":                         0.70,
-    "Geroscience":                   0.68,
-    "Mechanisms of Ageing and Development": 0.60,
-    "npj Aging":                     0.60,
-    "Genome Research":               0.74,
-    "Genome Biology":                0.74,
-    "Epigenetics & Chromatin":       0.65,
-    "EMBO Molecular Medicine":       0.78,
-    "Autophagy":                     0.82,
-    "Redox Biology":                 0.75,
-    "Free Radical Biology & Medicine":0.70,
-    "Cell Death & Disease":          0.72,
-    "Journals of Gerontology Series A": 0.65,
-    "Experimental Gerontology":      0.55,
-    "Age and Ageing":                0.55,
-    "eLife":                         0.76,
-    "EMBO Journal":                  0.82,
-    "PLOS Biology":                  0.70,
-    "iScience":                      0.55,
-    "bioRxiv":                       0.30,
-    "Research Square":               0.25
-}
-
-def estimate_impact(task: str, graph: nx.Graph) -> float:
-    # Статьи, связанные с задачей (соседи типа article)
-    articles = [n for n in graph.neighbors(task) if graph.nodes[n].get('type') == 'article']
-    if not articles:
-        return 0.0
-    # Максимальный вес журнала среди связанных статей (только по полному совпадению)
-    max_weight = 0.0
-    for art in articles:
-        journal = graph.nodes[art].get('journal', '').strip()
-        for j, w in JOURNAL_WEIGHT.items():
-            if j.strip() == journal:
-                max_weight = max(max_weight, w)
-    return max_weight
-
-def collect_data_for_confidence_scoring(task: str, graph: nx.Graph) -> dict:
+def update_confidence_scores_in_neo4j():
     """
-    Собирает данные для вычисления confidence score:
-    - абстракты статей
-    - источники статей
-    - типы источников
-    - годы публикации
+    Connects to Neo4j, iterates over all clusters, and for each article in a cluster,
+    computes and updates the confidence_score property using calculate_final_score.
     """
-    articles = [n for n in graph.neighbors(task) if graph.nodes[n].get('type') == 'article']
-    
-    if not articles:
-        return {
-            'abstracts': [],
-            'sources': [],
-            'source_types': [],
-            'years': []
-        }
-    
-    abstracts = []
-    sources = []
-    source_types = []
-    years = []
-    
-    for article in articles:
-        # Абстракт
-        abstract = graph.nodes[article].get('abstract', '')
-        if abstract:
-            abstracts.append(abstract)
-        
-        # Источник (журнал)
-        journal = graph.nodes[article].get('journal', '')
-        if journal:
-            sources.append(journal)
-        
-        # Тип источника (определяем по названию журнала)
-        source_type = 'research_paper'  # по умолчанию
-        journal_lower = journal.lower()
-        if 'preprint' in journal_lower or 'arxiv' in journal_lower or 'biorxiv' in journal_lower:
-            source_type = 'preprint'
-        elif 'review' in journal_lower:
-            source_type = 'systematic_review'
-        elif 'news' in journal_lower or 'press' in journal_lower:
-            source_type = 'news_article'
-        source_types.append(source_type)
-        
-        # Год публикации
-        pubdate = graph.nodes[article].get('pubdate', '')
-        if pubdate and pubdate != '0000-00-00':
-            try:
-                year = int(pubdate.split('-')[0])
-                years.append(year)
-            except (ValueError, IndexError):
-                years.append(2024)  # по умолчанию
-        else:
-            years.append(2024)  # по умолчанию
-    
-    return {
-        'abstracts': abstracts,
-        'sources': sources,
-        'source_types': source_types,
-        'years': years
-    }
-
-def compute_confidence_score(task: str, graph: nx.Graph, task_text: str) -> float:
-    """
-    Вычисляет confidence score используя TopicScorer
-    """
-    try:
-        # Собираем данные для скоринга
-        data = collect_data_for_confidence_scoring(task, graph)
-        
-        if not data['abstracts']:
-            return 0.0
-        
-        # Берем первый абстракт как основной
-        main_abstract = data['abstracts'][0]
-        
-        # Остальные абстракты как supporting articles
-        other_abstracts = data['abstracts'][1:] if len(data['abstracts']) > 1 else []
-        
-        # Средний год публикации
-        avg_year = int(np.mean(data['years'])) if data['years'] else 2024
-        
-        # Создаем TopicScorer и вычисляем score
-        scorer = TopicScorer()
-        confidence_score = scorer.calculate_final_score(
-            article_abstract=main_abstract,
-            other_articles=other_abstracts,
-            article_sources_types=data['source_types'],
-            article_sources=data['sources'],
-            publication_year=avg_year
-        )
-        
-        return round(confidence_score, 3)
-        
-    except Exception as e:
-        print(f"Error computing confidence score for task {task}: {e}")
-        return 0.0
+    NEO4J_HOST = os.getenv("NEO4J_HOST", "localhost")
+    NEO4J_URI = os.getenv("NEO4J_URI", f"bolt://{NEO4J_HOST}:7687")
+    driver = GraphDatabase.driver(NEO4J_URI, auth=("", ""))
+    with driver.session() as session:
+        # 1. Получить все кластеры
+        clusters = session.run("MATCH (c:Cluster) RETURN c.cid as cid").data()
+        for cluster in clusters:
+            cid = cluster["cid"]
+            # 2. Для каждого кластера получить все статьи через задачи
+            result = session.run(
+                """
+                MATCH (c:Cluster {cid: $cid})-[:HAS_TASK]->(t:Task)-[:MENTIONED_IN]->(a:Article)
+                RETURN a, t
+                """,
+                cid=cid
+            )
+            articles = []
+            article_nodes = []
+            for row in result:
+                a = row["a"]
+                article_nodes.append(a)
+                # Собираем нужные поля
+                abstract = a.get("abstract", "")
+                maturity = a.get("maturity", "unknown")
+                journal = a.get("journal", "unknown")
+                pubdate = a.get("pubdate", "0000-00-00")
+                try:
+                    year = int(pubdate.split("-")[0]) if pubdate and pubdate != "0000-00-00" else 2024
+                except Exception:
+                    year = 2024
+                articles.append({
+                    "abstract": abstract,
+                    "maturity": maturity,
+                    "journal": journal,
+                    "year": year
+                })
+            # 3. Для каждой статьи вычислить confidence_score
+            for idx, art in enumerate(articles):
+                article_abstract = art["abstract"]
+                # other_articles: абстракты других статей в этом кластере
+                other_articles = [a["abstract"] for i, a in enumerate(articles) if i != idx]
+                article_sources_types = [art["maturity"]]  # maturity текущей статьи
+                article_sources = [art["journal"]]  # journal текущей статьи
+                publication_year = art["year"]
+                scorer = TopicScorer()
+                confidence_score = scorer.calculate_final_score(
+                    article_abstract=article_abstract,
+                    other_articles=other_articles,
+                    article_sources_types=article_sources_types,
+                    article_sources=article_sources,
+                    publication_year=publication_year
+                )
+                # 4. Записать confidence_score в ноду статьи
+                article_id = article_nodes[idx].id
+                session.run(
+                    """
+                    MATCH (a:Article) WHERE id(a) = $aid
+                    SET a.confidence_score = $score
+                    """,
+                    aid=article_id,
+                    score=float(confidence_score)
+                )
+                print(f"[INFO] Updated Article id={article_id} with confidence_score={confidence_score}")
+    driver.close()

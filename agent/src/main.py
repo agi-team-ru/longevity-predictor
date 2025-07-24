@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 import json
 from src.graph_builder.neo4j_graph_maker import process_articles, client, LLM_MODEL
 from src.graph_builder.graph_clusterizer import cluster_tasks_in_neo4j
+from src.scorer.scorer_acticles import update_confidence_scores_in_neo4j
 
 # Импорт парсеров напрямую
 from src.parsers.parcer_pudmed import PubMedParser
@@ -85,6 +86,7 @@ def cluster_tasks():
 
 @app.post("/score_graph")
 def score_graph():
+    update_confidence_scores_in_neo4j()
     return {"status": "ok"}
 
 @app.post("/generate_report")
