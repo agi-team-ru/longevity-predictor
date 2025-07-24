@@ -2,7 +2,6 @@ import json
 import os
 from openai import OpenAI
 import requests
-from dotenv import load_dotenv
 from neo4j import GraphDatabase
 from datetime import datetime
 from tqdm import tqdm

@@ -4,6 +4,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 import json
+from src.graph_builder.neo4j_graph_maker import process_articles
 
 # Импорт парсеров напрямую
 from src.parsers.parcer_pudmed import PubMedParser
@@ -59,5 +60,10 @@ def run_all_parsers():
     # except Exception as e:
     #     with open(os.path.join(data_dir, "x_status.txt"), "w", encoding="utf-8") as f:
     #         f.write(f"Error: {e}")
+    return {"status": "ok"}
+
+@app.post("/build_graph_from_file")
+def build_graph_from_file():
+    process_articles("/app/data/pubmed_articles.json")
     return {"status": "ok"}
     
