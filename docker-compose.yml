@@ -53,7 +53,16 @@ services:
       - "6333:6333" # direct access
     volumes:
       - "qdrant-data:/qdrant/storage:z"
+    
 
+  flowise:
+      image: flowiseai/flowise:latest
+      container_name: flowise
+      restart: unless-stopped
+      ports:
+        - "3000:3000"
+      volumes:
+        - flowise_data:/root/.flowise
   neo4j:
     build:
       context: ./neo4j
@@ -70,3 +79,4 @@ services:
 volumes:
   qdrant-data:
   neo4j-data:
+  flowise_data:
