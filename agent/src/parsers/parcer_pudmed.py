@@ -45,6 +45,7 @@ class PubMedParser:
     def get_uids(self, date_range=None):
         if date_range is None:
             date_range = f"{self.start_year}:{self.end_year}[pdat]"
+        print(f"[PubMed] Получение UID статей за период: {date_range}")
         query = f'''(("Aging"[Majr] OR "Longevity"[Majr])
             AND 
             (
@@ -65,14 +66,16 @@ class PubMedParser:
         url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={query}&retmax=1000&retmode=json"
         response = requests.get(url)
         data = response.json()
+        print(f"[PubMed] Получено {len(data['esearchresult']['idlist'])} UID")
         return data
 
-    def get_json(self, uids_of_articles, output_file="pubmed_articles_2.json"):
+    def get_json(self, uids_of_articles):
         ids = uids_of_articles['esearchresult']['idlist']
         if not ids:
-            print("No articles found for the given query.")
-            return
+            print("[PubMed] Нет статей для скачивания.")
+            return []
         ids_str = ','.join(ids)
+        print(f"[PubMed] Скачивание XML для {len(ids)} статей...")
         url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={ids_str}&retmode=xml"
         response = requests.get(url)
         soup = BeautifulSoup(response.text, "xml")
@@ -97,15 +100,16 @@ class PubMedParser:
                 "founders" : founders.text if founders else None,
                 "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}"
             })
-        with open(output_file, "w", encoding="utf-8") as f:
-            json.dump(info, f, indent=2, ensure_ascii=False)
+        print(f"[PubMed] Распарсено {len(info)} статей.")
+        return info
 
-    def daily_parse(self, output_file="pubmed_articles_daily.json"):
+    def daily_parse(self):
         today = datetime.today()
         yesterday = today - timedelta(days=1)
         date_range = f"{yesterday.strftime('%Y/%m/%d')}:{today.strftime('%Y/%m/%d')}[pdat]"
+        print(f"[PubMed] Ежедневный парсинг за {date_range}")
         uids_of_articles = self.get_uids(date_range=date_range)
-        self.get_json(uids_of_articles, output_file=output_file)
+        return self.get_json(uids_of_articles)
 
 if __name__ == "__main__":
     parser = PubMedParser()

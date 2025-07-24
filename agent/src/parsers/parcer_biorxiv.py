@@ -6,8 +6,8 @@ def fast_multiword_biorxiv_search(
     from_date="2022-01-01",
     to_date="2025-12-31",
     max_results=300,
-    output="biorxiv_multiword.json"
 ):
+    print(f"[BioRxiv] Поиск препринтов с {from_date} по {to_date}...")
     if keywords is None:
         keywords = [
             "aging", "longevity", "senescence"
@@ -15,6 +15,7 @@ def fast_multiword_biorxiv_search(
     url = f"https://api.biorxiv.org/details/biorxiv/{from_date}/{to_date}/0"
     results = []
     while url and len(results) < max_results:
+        print(f"[BioRxiv] Скачивание: {url}")
         resp = requests.get(url)
         resp.raise_for_status()
         data = resp.json()
@@ -40,11 +41,8 @@ def fast_multiword_biorxiv_search(
             url = f"https://api.biorxiv.org/details/biorxiv/{from_date}/{to_date}/{len(results)}"
         else:
             url = None
-    with open(output, "w", encoding="utf-8") as f:
-        json.dump(results, f, ensure_ascii=False, indent=2)
-    print(f"Сохранено {len(results)} препринтов в {output}")
-    with open("razmetka.json", "w", encoding="utf-8") as f:
-        f.write(resp.text)
+    print(f"[BioRxiv] Найдено {len(results)} препринтов.")
+    return results
 
 if __name__ == "__main__":
     fast_multiword_biorxiv_search(

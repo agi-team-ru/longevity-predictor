@@ -59,7 +59,8 @@ def login_to_x(driver, username_or_email, password, phone_or_username=None):
     time.sleep(5)
 
 
-def scrape_x_hashtag(hashtag, scroll_count=3, username=None, password=None, phone_or_username=None):
+def scrape_x_hashtag(hashtag, scroll_count=3, username=None, password=None, phone_or_username=None, output=None):
+    print(f"[X] Старт парсинга по хештегу #{hashtag}")
     url = f"https://x.com/search?q=%23{hashtag}&src=typed_query&f=live"
     logger.info('хром стартует, будем парсить по хештегу {hashtag}')
     options = uc.ChromeOptions()
@@ -72,6 +73,7 @@ def scrape_x_hashtag(hashtag, scroll_count=3, username=None, password=None, phon
 
     try:
         if username and password:
+            print(f"[X] Логин в X под {username}")
             login_to_x(driver, username, password, phone_or_username)
         logger.info(f'попытка логина, переходим на {url}')
         driver.get(url)
@@ -82,12 +84,11 @@ def scrape_x_hashtag(hashtag, scroll_count=3, username=None, password=None, phon
             )
             logger.info('первые твиты')
         except:
-            logger.info('либо не прошли логин либюо нет твитов')
+            logger.info('либо не прошли логин либо нет твитов')
             return []
 
         for i in range(scroll_count):
-            logger.info(f'прокрутка #{i+1}')
-
+            print(f"[X] Прокрутка {i+1}/{scroll_count}")
             articles = driver.find_elements(By.CSS_SELECTOR, "article[data-testid='tweet']")
             logger.info(f"{len(articles)} твитов на экране")
 
@@ -112,16 +113,21 @@ def scrape_x_hashtag(hashtag, scroll_count=3, username=None, password=None, phon
                 except:
                     continue
 
-            logger.info(f'новых твитов: {added}')
+            print(f"[X] Новых твитов: {added}")
             logger.info(f'листаем дальше')
 
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             time.sleep(4)
 
-        logger.info(f"парсинг завершен, всего твитов собрано: {len(tweets_data)}")
+        print(f"[X] Парсинг завершен, всего твитов: {len(tweets_data)}")
+        if output:
+            with open(output, "w", encoding="utf-8") as f:
+                import json
+                json.dump(tweets_data, f, ensure_ascii=False, indent=2)
         return tweets_data
 
     finally:
+        print(f"[X] Закрываем браузер")
         logger.info('закрываем браузер')
         driver.quit()
 
