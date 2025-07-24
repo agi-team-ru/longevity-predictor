@@ -54,7 +54,7 @@ def version():
 @app.post("/ner")
 def ner_entities(req: NERRequest):
     global ner_bc5cdr, ner_bionlp
-    if not ner_bc5cdr:
+    if not ner_bc5cdr or not ner_bionlp:
         ner_bc5cdr = spacy.load("/app/models/en_ner_bc5cdr_md")
         ner_bionlp = spacy.load("/app/models/en_ner_bionlp13cg_md")
 
