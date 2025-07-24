@@ -5,3 +5,4 @@ openai==1.97.1
 qdrant-client==1.15.0
 scispacy==0.5.5
 sentence-transformers==5.0.0
+spacy==3.7.5

@@ -3,9 +3,8 @@ import logging
 import os
 from fastapi import FastAPI
 from pydantic import BaseModel
-from scispacy.linking import EntityLinker
 from sentence_transformers import SentenceTransformer
-import pickle
+import spacy
 
 logging.basicConfig(level=os.environ.get("LOG_LEVEL", "WARNING").upper())
 
@@ -20,28 +19,27 @@ async def lifespan(app: FastAPI):
     yield {
     }
 
+# Загрузка spaCy моделей напрямую с указанием cache_dir
+ner_bc5cdr = spacy.load("/app/models/en_ner_bc5cdr_md")
+ner_bionlp = spacy.load("/app/models/en_ner_bionlp13cg_md")
 
-app = FastAPI(lifespan=lifespan)
+# linker = EntityLinker(
+#     resolve_abbreviations=True,
+#     linker_name='umls',
+#     threshold=0.85,
+#     filter_for_definitions=True,
+# )
 
-
-# Загрузка моделей из pickle из /models
-with open("/app/models/en_ner_bc5cdr_md.pkl", "rb") as f:
-    ner_bc5cdr = pickle.load(f)
-with open("/app/models/en_ner_bionlp13cg_md.pkl", "rb") as f:
-    ner_bionlp = pickle.load(f)
-linker = EntityLinker(
-    resolve_abbreviations=True,
-    linker_name='umls',
-    threshold=0.85,
-    filter_for_definitions=True
-)
-embedder = SentenceTransformer("BAAI/bge-large-en-v1.5")
+# SentenceTransformer использует /app/models как cache_folder
+embedder = SentenceTransformer("BAAI/bge-large-en-v1.5", cache_folder="/app/models")
 
 class NERRequest(BaseModel):
     text: str
 
 class EmbedRequest(BaseModel):
     text: str
+
+app = FastAPI()
 
 @app.get("/")
 def version():
@@ -52,20 +50,14 @@ def ner_entities(req: NERRequest):
     entities = []
     for ner in [ner_bionlp, ner_bc5cdr]:
         doc = ner(req.text)
-        doc = linker(doc)
         for ent in doc.ents:
-            cui, score = ent._.kb_ents[0] if ent._.kb_ents else (None, None)
-            canon = linker.kb.cui_to_entity[cui].canonical_name if cui else None
             entities.append({
                 "text": ent.text,
-                "label": ent.label_,
-                "cui": cui,
-                "canonical": canon,
-                "score": score
+                "label": ent.label_
             })
     return {"entities": entities}
 
 @app.post("/embed")
 def embed_text(req: EmbedRequest):
-    emb = embedder.encode(req.text, normalize_embeddings=True, show_progress_bar=False)
-    return {"embedding": emb}
+    emb = embedder.encode(req.text)
+    return {"embedding": emb.tolist() if hasattr(emb, 'tolist') else list(emb)}
