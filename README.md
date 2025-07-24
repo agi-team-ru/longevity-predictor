@@ -37,7 +37,7 @@ GRAPH_PATH=full_longevity_graph.pkl
 
 ### Загрузка моделей
 
-Скачайте модели из `https://drive.google.com/drive/folders/1JlpaZjutgf6oe0ln_d58Ml54pwmPnUb8` в папку `./models` в корне проекта
+Скачайте архивы моделей из `https://drive.google.com/drive/folders/1JlpaZjutgf6oe0ln_d58Ml54pwmPnUb8` и распакуйте их в папку `./models` в корне проекта
 
 
 ### Bash запуск
