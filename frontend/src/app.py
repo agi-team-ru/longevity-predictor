@@ -8,6 +8,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from collections import Counter
+import os
+from neo4j import GraphDatabase
 
 # Конфигурация страницы
 st.set_page_config(
@@ -40,29 +42,65 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 @st.cache_data
-def load_data():
-    """Загружает все данные из файлов"""
-    try:
-        # Загрузка графа
-        with open('full_longevity_graph.pkl', 'rb') as f:
-            graph = pickle.load(f)
-        
+def load_data_from_neo4j():
+    NEO4J_HOST = os.getenv("NEO4J_HOST", "localhost")
+    NEO4J_URI = os.getenv("NEO4J_URI", f"bolt://{NEO4J_HOST}:7687")
+    driver = GraphDatabase.driver(NEO4J_URI, auth=("", ""))
+    with driver.session() as session:
         # Загрузка задач
-        with open('tasks_db.json', 'r', encoding='utf-8') as f:
-            tasks_db = json.load(f)
-        
+        tasks = session.run(
+            """
+            MATCH (t:Task)
+            OPTIONAL MATCH (t)-[:MENTIONED_IN]->(a:Article)
+            RETURN id(t) as id, t.text as text, t.category as category, t.maturity as maturity, 
+                   t.score as score, t.impact as impact, t.found_tasks as found_tasks, collect(id(a)) as articles
+            """
+        ).data()
+        tasks_db = {}
+        for row in tasks:
+            tasks_db[row["id"]] = {
+                "text": row["text"],
+                "category": row.get("category", "unknown"),
+                "maturity": row.get("maturity", "unknown"),
+                "score": row.get("score", 0),
+                "impact": row.get("impact", 0),
+                "found_tasks": row.get("found_tasks", []),
+                "articles": row.get("articles", [])
+            }
         # Загрузка статей
-        try:
-            with open('pubmed_articles.json', 'r', encoding='utf-8') as f:
-                articles = json.load(f)
-        except FileNotFoundError:
-            with open('short_pubmed_articles.json', 'r', encoding='utf-8') as f:
-                articles = json.load(f)
-        
-        return graph, tasks_db, articles
-    except Exception as e:
-        st.error(f"Ошибка при загрузке данных: {e}")
-        return None, None, None
+        articles = session.run(
+            """
+            MATCH (a:Article)
+            RETURN id(a) as id, a.title as title, a.abstract as abstract, a.journal as journal, 
+                   a.maturity as maturity, a.pubdate as pubdate, a.confidence_score as confidence_score
+            """
+        ).data()
+        articles_dict = []
+        for row in articles:
+            articles_dict.append({
+                "id": row["id"],
+                "title": row["title"],
+                "abstract": row["abstract"],
+                "journal": row["journal"],
+                "maturity": row["maturity"],
+                "pubdate": row["pubdate"],
+                "confidence_score": row["confidence_score"]
+            })
+        # Загрузка графа (nodes/edges)
+        nodes = session.run(
+            """
+            MATCH (n)
+            RETURN id(n) as id, labels(n) as labels, n
+            """
+        ).data()
+        edges = session.run(
+            """
+            MATCH (n)-[r]->(m)
+            RETURN id(n) as source, type(r) as type, id(m) as target
+            """
+        ).data()
+    driver.close()
+    return nodes, edges, tasks_db, articles_dict
 
 def create_network_visualization(graph, tasks_db, task_filter=None, category_filter=None):
     """Создает интерактивную визуализацию сети"""
@@ -362,10 +400,29 @@ def main():
     
     # Загрузка данных
     with st.spinner("Загрузка данных..."):
-        graph, tasks_db, articles = load_data()
+        nodes, edges, tasks_db, articles = load_data_from_neo4j()
     
-    if graph is None:
-        st.error("Не удалось загрузить данные. Проверьте наличие файлов.")
+    if not nodes or not edges:
+        st.error("Не удалось загрузить данные из Neo4j. Проверьте подключение и наличие данных.")
+        return
+    
+    # Соберите NetworkX граф из загруженных узлов и ребер
+    graph = nx.Graph()
+    for node_data in nodes:
+        node_id = node_data["id"]
+        node_labels = node_data["labels"]
+        node_properties = node_data["n"]
+        node_type = node_labels[0] if node_labels else "unknown"
+        graph.add_node(node_id, type=node_type, **node_properties)
+
+    for edge_data in edges:
+        source_id = edge_data["source"]
+        edge_type = edge_data["type"]
+        target_id = edge_data["target"]
+        graph.add_edge(source_id, target_id, type=edge_type)
+
+    if not graph.nodes():
+        st.warning("Не удалось создать граф из загруженных данных.")
         return
     
     # Sidebar с фильтрами

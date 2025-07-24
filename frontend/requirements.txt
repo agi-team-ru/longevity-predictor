@@ -4,4 +4,4 @@ plotly==6.2.0
 pandas==2.3.1
 numpy==2.3.1
 networkx==3.5
-
+neo4j==5.25.0
