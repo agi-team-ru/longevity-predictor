@@ -4,18 +4,17 @@
 
 ## Пример работы сервиса
 
-<div style="display: flex; gap: 24px; align-items: flex-start;">
-  <div style="flex: 1; text-align: center;">
-    <img src="assets\graph_100_better.png" alt="Граф знаний исследований долголетия" style="width:100%; max-width:350px;"/>
-    <br/>
-    <span><b>Визуализация графа знаний, показывающая связи между исследовательскими задачами, научными статьями и биомедицинскими терминами</b></span>
-  </div>
-  <div style="flex: 1; text-align: center;">
-    <img src="research\neo4j_visuals\zoom_clusters.png" alt="Анализ кластеров задач" style="width:100%; max-width:350px;"/>
-    <br/>
-    <span><b>Кластеризация исследовательских задач по семантической близости для выявления основных направлений исследований</b></span>
-  </div>
-</div>
+<p style="width: 50%; text-align: center;">
+  <img src="assets/graph_100_better.png" alt="Граф знаний исследований долголетия" style="width:100%; max-width:350px;"/>
+  <br/>
+  <span><b>Визуализация графа знаний, показывающая связи между исследовательскими задачами, научными статьями и биомедицинскими терминами</b></span>
+</p>
+
+<p style="width: 50%; text-align: center;">
+  <img src="research/neo4j_visuals/zoom_clusters.png" alt="Анализ кластеров задач" style="width:100%; max-width:350px;"/>
+  <br/>
+  <span><b>Кластеризация исследовательских задач по семантической близости для выявления основных направлений исследований</b></span>
+</p>
 
 # Развертывание сервиса
 
