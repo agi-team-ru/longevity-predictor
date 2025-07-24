@@ -8,9 +8,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from collections import Counter
-from datetime import datetime
-import re
-from typing import Dict, List, Tuple
 
 # Конфигурация страницы
 st.set_page_config(
