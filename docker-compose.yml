@@ -31,7 +31,8 @@ services:
       - "OPENAI_API_BASE=$LLM_API_BASE_URL"
       - "OPENAI_API_KEY=$LLM_API_KEY"
       - "LLM_MODEL=$LLM_MODEL"
-      - "QDRANT_DB_HOST=qdrant"
+      - "NEO4J_HOST=backend"
+      - "QDRANT_HOST=qdrant"
       - "LOG_LEVEL=INFO"
     logging: *logging
     volumes:
@@ -39,7 +40,31 @@ services:
       - ./backend/src:/app/src
     ports:
       - "3000:3000" 
-      - "5678:5678" # debugger
+      - "25678:5678" # debugger
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  agent:
+    build:
+      context: ./agent
+      network: host
+    restart: always
+    environment:
+      - "OPENAI_BASE_URL=$LLM_API_BASE_URL"
+      - "OPENAI_API_BASE=$LLM_API_BASE_URL"
+      - "OPENAI_API_KEY=$LLM_API_KEY"
+      - "LLM_MODEL=$LLM_MODEL"
+      - "BACKEND_HOST=backend"
+      - "QDRANT_HOST=qdrant"
+      - "NEO4J_HOST=neo4j"
+      - "LOG_LEVEL=INFO"
+    logging: *logging
+    volumes:
+      - ./models:/app/models
+      - ./agent/src:/app/src
+    ports:
+      - "3001:3000" 
+      - "35678:5678" # debugger
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
