@@ -6,12 +6,12 @@
 
 <div style="display: flex; gap: 24px; align-items: flex-start;">
   <div style="flex: 1; text-align: center;">
-    <img src="assets/graph_100_better.png" alt="Граф знаний исследований долголетия" style="width:100%; max-width:350px;"/>
+    <img src="assets\graph_100_better.png" alt="Граф знаний исследований долголетия" style="width:100%; max-width:350px;"/>
     <br/>
     <span><b>Визуализация графа знаний, показывающая связи между исследовательскими задачами, научными статьями и биомедицинскими терминами</b></span>
   </div>
   <div style="flex: 1; text-align: center;">
-    <img src="assets/graph_100.png" alt="Анализ кластеров задач" style="width:100%; max-width:350px;"/>
+    <img src="research\neo4j_visuals\zoom_clusters.png" alt="Анализ кластеров задач" style="width:100%; max-width:350px;"/>
     <br/>
     <span><b>Кластеризация исследовательских задач по семантической близости для выявления основных направлений исследований</b></span>
   </div>
@@ -22,15 +22,15 @@
 ### Переменные окружения
 ```bash
 # LLM API настройки
-OPENAI_BASE_URL=http://localhost:8000/v1
-OPENAI_API_KEY=sk-dummy-key
+LLM_API_BASE_URL=http://localhost:8000/v1
+LLM_API_KEY=sk-dummy-key
+LLM_MODEL=llama-3.3-70b-instruct
 
-# NER и Embedding сервис
-NER_SERVICE_URL=http://localhost:8001
+# Порт для frontend
+LISTEN_PORT=8501
 
-# Пути к данным
-TASKS_DB_PATH=tasks_db.json
-GRAPH_PATH=full_longevity_graph.pkl
+# Логирование
+LOG_LEVEL=INFO
 ```
 
 *Перед запуском настройте необходимые переменные окружения в `.env`, или скопируйте `.env.example` в `.env`*
@@ -57,26 +57,38 @@ docker compose up -d
 ### Докер контейнеры
 
 На сервисе развернуты следующие компоненты:
+
 <div style="display: flex; gap: 32px; margin-bottom: 24px;">
   <div style="flex: 1; background: #f5f7fa; border-radius: 18px; padding: 24px; min-width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
     <p style="margin: 0; text-align: center; color: #000000;">
-        <b>Service Logic Container</b>
-        <p style="color: #000;">Контейнер со всей логикой: построение графа, апдейт связей, retrieve наиболее релевантных, расчёт скора и пр.</p>
+        <b>Frontend (Streamlit)</b>
+        <p style="color: #000;">Веб-интерфейс для визуализации и анализа данных. Порт 80.</p>
     </p>
   </div>
   <div style="flex: 1; background: #f5f7fa; border-radius: 18px; padding: 24px; min-width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
     <p style="margin: 0; text-align: center; color: #000000;">
-        <b>ML Container</b>
-        <p style="color: #000;">Контейнер с тяжеловесными ML-компонентами. </p>
+        <b>Backend (FastAPI)</b>
+        <p style="color: #000;">API сервис с NER и embedding моделями. Порт 3000.</p>
     </p>
   </div>
   <div style="flex: 1; background: #f5f7fa; border-radius: 18px; padding: 24px; min-width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
     <p style="margin: 0; text-align: center; color: #000000;">
-        <b>Streamlit UI</b>
-        <p style="color: #000;">Визуализация с помощью Streamlit. Демонстрация графа, отрисовка деталей узлов и пр.</p>
+        <b>Qdrant (Vector DB)</b>
+        <p style="color: #000;">Векторная база данных для хранения эмбеддингов. Порт 6333.</p>
+    </p>
+  </div>
+  <div style="flex: 1; background: #f5f7fa; border-radius: 18px; padding: 24px; min-width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+    <p style="margin: 0; text-align: center; color: #000000;">
+        <b>Neo4j (Graph DB)</b>
+        <p style="color: #000;">Графовая база данных для хранения связей. Порт 7474/7687.</p>
     </p>
   </div>
 </div>
+
+**ML компоненты в Backend:**
+- **2 spaCy модели для NER**: `en_ner_bc5cdr_md` и `en_ner_bionlp13cg_md` для извлечения именованных сущностей
+- **SentenceTransformer**: `BAAI/bge-large-en-v1.5` для создания эмбеддингов
+- **UMLS линкинг**: планируется интеграция для нормализации биомедицинских терминов
 
 ---
 
@@ -86,51 +98,47 @@ docker compose up -d
 
 **Принцип работы сервиса:**
 
-1. Получаем статью (PubMed или BioRxiv, работаем с абстрактом).
-2. Проверяем, относится ли статья к проблематике (фильтрация по ключевым словам и авторам из ITM).
-3. Если статья релевантна:
-    - Выделяем задачи с помощью LLM (по абстракту).
-    - Добавляем новые задачи в граф, ищем похожие задачи для объединения.
-    - Выделяем сущности (биомедицинские термины) с помощью NER-моделей.
-    - Нормализуем сущности через UMLS.
-    - Ставим метки (тип сущности, принадлежность к задачам и т.д.).
-    - Добавляем новые сущности в граф, ищем и объединяем дубликаты.
-4. Обновляем связи между задачами и сущностями в графе знаний.
+1. **Обработка статей**: Получаем статьи из PubMed/BioRxiv и анализируем абстракты
+2. **Фильтрация**: Проверяем релевантность статей к проблематике долголетия
+3. **Извлечение сущностей**: Используем NER модели для выделения биомедицинских терминов
+4. **Создание эмбеддингов**: Генерируем векторные представления текстов
+5. **Хранение данных**: 
+   - Эмбеддинги сохраняем в Qdrant (векторная БД)
+   - Связи между сущностями храним в Neo4j (графовая БД)
+6. **Визуализация**: Streamlit интерфейс для анализа и отображения результатов
 
-В результате формируется и обновляется граф знаний по задачам и сущностям из научных статей.
+**Текущий статус**: Базовая инфраструктура развернута, ML модели загружаются, планируется интеграция с LLM для извлечения исследовательских задач.
 
 ---
 
-### Структура файлов (undone yet)
+### Структура файлов
 
-#### Основные компоненты
-- **`graph_making.py`** - основной модуль обработки статей, извлечения задач и построения графа знаний
-- **`llm_task_clustering.py`** - кластеризация исследовательских задач с помощью LLM
-- **`ner_linker_service.py`** - FastAPI сервис для NER и эмбеддингов с интеграцией UMLS
-- **`graph_render.py`** - промежуточная визуализация графа (до финальной версии от Карины)
-- **`reporting_agent.py`** - агент формирования отчетов по топ-задачам
+#### Микросервисная архитектура
+```
+longevity-predictor/
+├── frontend/                    # Streamlit приложение для визуализации
+│   ├── src/
+│   │   └── app.py              # основной файл Streamlit приложения
+│   ├── Dockerfile
+│   └── requirements.txt
+├── backend/                     # FastAPI сервис с ML компонентами
+│   ├── src/
+│   │   └── main.py             # API эндпоинты для NER и эмбеддингов
+│   ├── Dockerfile
+│   └── requirements.txt
+├── qdrant/                      # конфигурация векторной базы данных
+├── neo4j/                       # конфигурация графовой базы данных
+├── models/                      # директория для ML моделей (spaCy, SentenceTransformer)
+├── assets/                      # изображения для документации и визуализации
+├── docker-compose.yml           # оркестрация всех сервисов
+└── .env                         # переменные окружения (создать из .env.example)
+```
 
-#### Данные
-- **`full_longevity_graph.pkl`** - полный граф знаний
-- **`tasks_db.json`** - база данных исследовательских задач
-- **`pubmed_articles.json`** - обработанные статьи из PubMed
-- **`biorxiv_articles.json`** - обработанные препринты из BioRxiv
-
-#### Индексы и кеши
-- **`full_pubmed_index/`** - FAISS индекс для поиска по статьям
-- **`short_index/`** - сокращенный индекс
-- **`llm_cache.json`** - кеш запросов к LLM
-- **`llm_log.jsonl`** - логи взаимодействий с LLM
-
-#### Визуализация
-- **`streamlit_app.py`** - веб-интерфейс для анализа данных
-- **`graph_visuals/`** - изображения графов знаний
-
-#### Вспомогательные модули
-- **`scorer_v2/`** - система оценки приоритетности задач
-- **`reports/`** - сгенерированные отчеты
-- **`parcer_biorxiv.py`** - парсер BioRxiv
-- **`pubmed_parcer.py`** - парсер PubMed
+#### Устаревшие компоненты (из старой версии)
+- **`graph_making.py`** - обработка статей и построение графа знаний
+- **`llm_task_clustering.py`** - кластеризация задач с LLM
+- **`reporting_agent.py`** - генерация отчетов
+- **`scorer_v2/`** - система оценки приоритетности
 
 ---
 
@@ -140,7 +148,7 @@ docker compose up -d
 
 |     | Имя | GitHub | Позиция |
 |-----|-----|--------|---------|
-| 1. | Борисов Никита | [**Nizier193**](https://github.com/Nizier193) | ML (NLP) |
+| 1. | Борисов Никита | [**nizier193**](https://github.com/Nizier193) | ML (NLP) |
 | 2. | Анна Чифранова | [**amsurex**](https://github.com/amsurex) | ML (NLP) |
 | 3. | Дашевский Илья | [**idashevskii**](https://github.com/idashevskii) | Fullstack |
 | 4. | Янышевская Карина | [**fanot**](https://github.com/fanot) | ML (NLP) |
