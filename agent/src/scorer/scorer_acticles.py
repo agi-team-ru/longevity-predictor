@@ -1,3 +1,7 @@
+import numpy as np
+import networkx as nx
+
+
 import math
 from typing import List
 from datetime import datetime
@@ -5,9 +9,51 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 import json
 
-from src.scorer.utils import get_model_response, extract_json_from_text
+import openai
 
-# from imp import source_from_cache
+import os
+
+LLM_MODEL = os.getenv("LLM_MODEL")
+
+def get_model_response(
+    prompt: str,
+    model_name: str = "model_base"
+) -> str:
+    client = openai.OpenAI()
+    # Формируем сообщение для модели
+    messages = [
+        {
+            "role": "user",
+            "content": prompt
+        }
+    ]
+    response = client.chat.completions.create(
+        model=LLM_MODEL,
+        messages=messages
+    )
+    # Извлекаем текст ответа
+    if hasattr(response, "choices") and len(response.choices) > 0:
+        message = response.choices[0].message
+        if hasattr(message, "content"):
+            return message.content
+    return ""
+
+def extract_json_from_text(text: str) -> List[str]:
+    start_json_char = "{"
+    decoder = json.JSONDecoder(strict=False)
+    pos = 0
+    ret: List[str] = []
+    while True:
+        start_char_pos = text.find(start_json_char, pos)
+        if start_char_pos < 0:
+            break
+        try:
+            result, index = decoder.raw_decode(text[start_char_pos:])
+            pos = start_char_pos + index
+            ret.append(json.dumps(result, ensure_ascii=False))
+        except ValueError:
+            pos = start_char_pos + 1
+    return ret
 
 class ArticleToScore(BaseModel):
     abstract: str = Field(..., description="Краткое описание")
@@ -253,3 +299,152 @@ class TopicScorer:
             print(f"{'final_confidence':<16} | {final_confidence:<7.3f} |")
         
         return final_confidence
+
+
+JOURNAL_WEIGHT = {
+    "Nature":                        1.00,
+    "Science":                       1.00,
+    "Cell":                          1.00,
+    "Nature Medicine":               0.95,
+    "Nature Biotechnology":          0.94,
+    "Nature Metabolism":             0.92,
+    "Nature Aging":                  0.90,
+    "Science Translational Medicine":0.90,
+    "Cell Metabolism":               0.88,
+    "Cell Stem Cell":                0.88,
+    "Aging Cell":                    0.80,
+    "Aging":                         0.70,
+    "Geroscience":                   0.68,
+    "Mechanisms of Ageing and Development": 0.60,
+    "npj Aging":                     0.60,
+    "Genome Research":               0.74,
+    "Genome Biology":                0.74,
+    "Epigenetics & Chromatin":       0.65,
+    "EMBO Molecular Medicine":       0.78,
+    "Autophagy":                     0.82,
+    "Redox Biology":                 0.75,
+    "Free Radical Biology & Medicine":0.70,
+    "Cell Death & Disease":          0.72,
+    "Journals of Gerontology Series A": 0.65,
+    "Experimental Gerontology":      0.55,
+    "Age and Ageing":                0.55,
+    "eLife":                         0.76,
+    "EMBO Journal":                  0.82,
+    "PLOS Biology":                  0.70,
+    "iScience":                      0.55,
+    "bioRxiv":                       0.30,
+    "Research Square":               0.25
+}
+
+def estimate_impact(task: str, graph: nx.Graph) -> float:
+    # Статьи, связанные с задачей (соседи типа article)
+    articles = [n for n in graph.neighbors(task) if graph.nodes[n].get('type') == 'article']
+    if not articles:
+        return 0.0
+    # Максимальный вес журнала среди связанных статей (только по полному совпадению)
+    max_weight = 0.0
+    for art in articles:
+        journal = graph.nodes[art].get('journal', '').strip()
+        for j, w in JOURNAL_WEIGHT.items():
+            if j.strip() == journal:
+                max_weight = max(max_weight, w)
+    return max_weight
+
+def collect_data_for_confidence_scoring(task: str, graph: nx.Graph) -> dict:
+    """
+    Собирает данные для вычисления confidence score:
+    - абстракты статей
+    - источники статей
+    - типы источников
+    - годы публикации
+    """
+    articles = [n for n in graph.neighbors(task) if graph.nodes[n].get('type') == 'article']
+    
+    if not articles:
+        return {
+            'abstracts': [],
+            'sources': [],
+            'source_types': [],
+            'years': []
+        }
+    
+    abstracts = []
+    sources = []
+    source_types = []
+    years = []
+    
+    for article in articles:
+        # Абстракт
+        abstract = graph.nodes[article].get('abstract', '')
+        if abstract:
+            abstracts.append(abstract)
+        
+        # Источник (журнал)
+        journal = graph.nodes[article].get('journal', '')
+        if journal:
+            sources.append(journal)
+        
+        # Тип источника (определяем по названию журнала)
+        source_type = 'research_paper'  # по умолчанию
+        journal_lower = journal.lower()
+        if 'preprint' in journal_lower or 'arxiv' in journal_lower or 'biorxiv' in journal_lower:
+            source_type = 'preprint'
+        elif 'review' in journal_lower:
+            source_type = 'systematic_review'
+        elif 'news' in journal_lower or 'press' in journal_lower:
+            source_type = 'news_article'
+        source_types.append(source_type)
+        
+        # Год публикации
+        pubdate = graph.nodes[article].get('pubdate', '')
+        if pubdate and pubdate != '0000-00-00':
+            try:
+                year = int(pubdate.split('-')[0])
+                years.append(year)
+            except (ValueError, IndexError):
+                years.append(2024)  # по умолчанию
+        else:
+            years.append(2024)  # по умолчанию
+    
+    return {
+        'abstracts': abstracts,
+        'sources': sources,
+        'source_types': source_types,
+        'years': years
+    }
+
+def compute_confidence_score(task: str, graph: nx.Graph, task_text: str) -> float:
+    """
+    Вычисляет confidence score используя TopicScorer
+    """
+    try:
+        # Собираем данные для скоринга
+        data = collect_data_for_confidence_scoring(task, graph)
+        
+        if not data['abstracts']:
+            return 0.0
+        
+        # Берем первый абстракт как основной
+        main_abstract = data['abstracts'][0]
+        
+        # Остальные абстракты как supporting articles
+        other_abstracts = data['abstracts'][1:] if len(data['abstracts']) > 1 else []
+        
+        # Средний год публикации
+        avg_year = int(np.mean(data['years'])) if data['years'] else 2024
+        
+        # Создаем TopicScorer и вычисляем score
+        scorer = TopicScorer()
+        confidence_score = scorer.calculate_final_score(
+            article_abstract=main_abstract,
+            other_articles=other_abstracts,
+            article_sources_types=data['source_types'],
+            article_sources=data['sources'],
+            publication_year=avg_year
+        )
+        
+        return round(confidence_score, 3)
+        
+    except Exception as e:
+        print(f"Error computing confidence score for task {task}: {e}")
+        return 0.0
