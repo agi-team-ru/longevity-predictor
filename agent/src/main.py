@@ -5,6 +5,7 @@ import os
 from contextlib import asynccontextmanager
 import json
 from src.graph_builder.neo4j_graph_maker import process_articles, client, LLM_MODEL
+from src.graph_builder.graph_clusterizer import cluster_tasks_in_neo4j
 
 # Импорт парсеров напрямую
 from src.parsers.parcer_pudmed import PubMedParser
@@ -66,7 +67,11 @@ def run_all_parsers():
 def build_graph_from_file():
     process_articles("/app/data/pubmed_articles.json")
     return {"status": "ok"}
-    
+
+@app.post("/cluster_tasks")
+def cluster_tasks():
+    cluster_tasks_in_neo4j()
+    return {"status": "ok"}
 
 # @app.post("/test_llm")
 # def test_llm():
