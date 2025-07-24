@@ -3,3 +3,4 @@
 !/models/.gitkeep
 /data/*
 !/data/.gitkeep
+.venv
