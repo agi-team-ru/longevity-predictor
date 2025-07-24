@@ -10,6 +10,7 @@ from tqdm import tqdm
 NEO4J_HOST = os.getenv("NEO4J_HOST", "localhost")
 NEO4J_URI = os.getenv("NEO4J_URI", f"bolt://{NEO4J_HOST}:7687")
 BACKEND_HOST = os.getenv("BACKEND_HOST", "localhost")
+LLM_MODEL = os.getenv("LLM_MODEL")
 
 client = OpenAI(
 )
@@ -43,7 +44,7 @@ ABSTRACT:
 '''.strip()
 
     response = client.chat.completions.create(
-        model="llama-3.3-70b-instruct",
+        model=LLM_MODEL,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=200,
         temperature=temperature
@@ -144,7 +145,7 @@ class Neo4jGraph:
 def process_articles(json_path):
     with open(json_path, 'r', encoding='utf-8') as f:
         articles = json.load(f)[:10]
-    graph = Neo4jGraph(NEO4J_URI)
+    graph = Neo4jGraph(NEO4J_URI, '', '')
     backend_ner_url = f"http://{BACKEND_HOST}:3000/ner"
     backend_embed_url = f"http://{BACKEND_HOST}:3000/embed"
     for idx, art in enumerate(tqdm(articles)):

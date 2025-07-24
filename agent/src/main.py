@@ -4,7 +4,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 import json
-from src.graph_builder.neo4j_graph_maker import process_articles
+from src.graph_builder.neo4j_graph_maker import process_articles, client, LLM_MODEL
 
 # Импорт парсеров напрямую
 from src.parsers.parcer_pudmed import PubMedParser
@@ -67,3 +67,21 @@ def build_graph_from_file():
     process_articles("/app/data/pubmed_articles.json")
     return {"status": "ok"}
     
+
+# @app.post("/test_llm")
+# def test_llm():
+#     response = client.chat.completions.create(
+#         model=LLM_MODEL,
+#         messages=[{"role": "user", "content": "text"}],
+#         max_tokens=200,
+#         temperature=1
+#     )
+#     return {"status": "ok"}
+
+@app.post("/score_graph")
+def score_graph():
+    return {"status": "ok"}
+
+@app.post("/generate_report")
+def generate_report():
+    return {"status": "ok"}
