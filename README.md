@@ -43,6 +43,8 @@ docker compose up -d
 
 *Приложение микросервисное на основе Docker, запуск в одну команду.*
 
+Открыть в браузере `http://localhost:8501/ui/`
+
 ## Архитектура
 
 <img src="assets/service_structure.jpg" style="width: 50%">
