@@ -14,6 +14,7 @@ from src.parsers.parcer_biorxiv import fast_multiword_biorxiv_search
 # from src.parsers.parser_X import scrape_x_hashtag
 
 from src.scorer.score_name_clusters import name_and_score_clusters
+from src.reporter.report_creating import generate_reports_from_neo4j
 
 logging.basicConfig(level=os.environ.get("LOG_LEVEL", "WARNING").upper())
 
@@ -98,4 +99,5 @@ def score_name_clusters():
 
 @app.post("/generate_report")
 def generate_report():
+    generate_reports_from_neo4j(top_k=1)
     return {"status": "ok"}
