@@ -1,3 +1,5 @@
 .env
 /models/*
 !/models/.gitkeep
+/data/*
+!/data/.gitkeep
