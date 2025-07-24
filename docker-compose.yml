@@ -38,6 +38,7 @@ services:
       - "LOG_LEVEL=INFO"
     logging: *logging
     volumes:
+      - ./models:/app/models
       - ./backend/src:/app/src
     ports:
       - "5678:5678" # debugger
