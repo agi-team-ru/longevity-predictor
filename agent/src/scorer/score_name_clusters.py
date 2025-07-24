@@ -12,6 +12,8 @@ client = OpenAI()
 def name_and_score_clusters():
     driver = GraphDatabase.driver(NEO4J_URI, auth=("", ""))
     with driver.session() as session:
+        # Удалить все кластеры и их связи
+        session.run("MATCH (c:Cluster) DETACH DELETE c")
         clusters = session.run("MATCH (c:Cluster) RETURN c.cid as cid").data()
         for cluster in clusters:
             cid = cluster["cid"]
