@@ -1,13 +1,7 @@
-<table>
-  <tr>
-    <td style="width:30%; vertical-align:middle;">
-      <img src="assets/logo.jpg" alt="Logo" style="width:100%; min-width:60px; max-width:120px;">
-    </td>
-    <td style="vertical-align:middle;">
-      <h1 style="display:inline-block; margin-left: 20px;">Longevity Research Predictor</h1>
-    </td>
-  </tr>
-</table>
+<p align="center">
+  <img src="assets/logo.jpg" alt="Logo" width="120" style="min-width:60px; max-width:120px;">
+</p>
+<h1 align="center">Longevity Research Predictor</h1>
 
 **Система анализа и прогнозирования приоритетных направлений исследований в области биологии старения и долголетия на основе обработки научных статей с использованием графов знаний и машинного обучения.**
 
